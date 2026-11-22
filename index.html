@@ -128,6 +128,15 @@ nav button span{font-size:21px}nav button.on{color:var(--g);background:var(--gl)
 </section>
 </main>
 
+<div id="lock" style="position:fixed;inset:0;background:#000b;z-index:1200;display:none;align-items:center;justify-content:center;padding:20px">
+  <div class="card" style="max-width:360px;width:100%">
+    <div style="font-weight:800;font-size:17px">🔒 Staff access</div>
+    <div style="font-size:13px;color:var(--mut);margin-top:4px">Admin Review and Van Driver List are for school staff only. Enter the password to continue.</div>
+    <label>Password</label><input id="pw" type="password" autocomplete="off" onkeydown="if(event.key==='Enter')unlock()">
+    <div id="pwErr" style="color:#e53935;font-size:13px;font-weight:700;margin-top:6px"></div>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" onclick="unlock()">Unlock</button><button class="btn alt" onclick="$('lock').style.display='none'">Cancel</button></div>
+  </div>
+</div>
 <div id="modal" onclick="this.style.display='none'"><div class="card" style="max-width:380px;width:100%" id="mbody"></div></div>
 
 <nav>
@@ -154,7 +163,7 @@ const opts=(a,ph)=>(ph?`<option value="">${ph}</option>`:"")+a.map(x=>`<option>$
 $("nTrade").innerHTML=opts(TRADES.slice(0,8),"Select trade");$("cTrade").innerHTML=opts(TRADES);
 $("dist").innerHTML=opts(Object.keys(D),"Select district");
 
-function go(i){[0,1,2].forEach(k=>{$("t"+k).classList.toggle("hide",k!==i);document.querySelectorAll("nav button")[k].classList.toggle("on",k===i)});
+function go(i){if(i>0&&!ok){want=i;$("lock").style.display="flex";$("pw").value="";$("pwErr").textContent="";setTimeout(()=>$("pw").focus(),50);return}[0,1,2].forEach(k=>{$("t"+k).classList.toggle("hide",k!==i);document.querySelectorAll("nav button")[k].classList.toggle("on",k===i)});
  if(i===0&&map)setTimeout(()=>map.invalidateSize(),50);if(i===1)drawAdmin();if(i===2)drawVan();scrollTo(0,0)}
 function setType(t){type=t;$("bn").classList.toggle("on",t==="new");$("bc").classList.toggle("on",t==="cont");$("newF").classList.toggle("hide",t!=="new");$("contF").classList.toggle("hide",t!=="cont")}
 function prev(inp){const f=inp.files[0];if(!f)return;const m=$("photoMsg");m.textContent="Loading photo…";const r=new FileReader();
@@ -214,6 +223,8 @@ function drawVan(){$("chips").innerHTML=ROUTES.map(x=>`<button class="chip ${x==
  <div style="font-size:13px;line-height:1.7;margin:8px 0">🧭 ${D[r.district][2]} · ${r.district}<br>📍 ${r.land}<br>📱 <a href="tel:${r.phone.replace(/\s/g,"")}" style="color:var(--g);font-weight:700">${r.phone}</a></div>
  <a class="btn alt sm" href="https://google.com" target="_blank" rel="noopener">Navigate (Google Maps)</a></div>`).join(""):`<div class="card" style="text-align:center;color:var(--mut)">No admitted students on this route yet. Approve applicants in Admin Review.</div>`}
 
+let ok=false,want=0;
+function unlock(){if($("pw").value==="Nilespringsvs"){ok=true;$("lock").style.display="none";go(want)}else{$("pwErr").textContent="Wrong password. Try again."}}
 initMap();
 let dp;addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;$("inst").classList.remove("hide")});
 $("inst").onclick=()=>{if(dp)dp.prompt();$("inst").classList.add("hide")};
