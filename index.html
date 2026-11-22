@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NSVS SmartAdmit &amp; Shuttle</title>
+<meta name="theme-color" content="#12254a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SmartAdmit">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<style>
+:root{--bg:#eef3ef;--card:#fff;--tx:#12254a;--mut:#5b6b85;--bd:#d6e0d9;--g:#0f7b4a;--n:#12254a;--gl:#dff3e8;--am:#fff1cc;--amt:#7a5400;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c1424;--card:#16213a;--tx:#e8eefb;--mut:#9fb0cf;--bd:#2a3a5c;--g:#2fbf7c;--n:#0a1830;--gl:#12392a;--am:#3b2f0c;--amt:#f3cf6b}}
+:root[data-theme="dark"]{--bg:#0c1424;--card:#16213a;--tx:#e8eefb;--mut:#9fb0cf;--bd:#2a3a5c;--g:#2fbf7c;--n:#0a1830;--gl:#12392a;--am:#3b2f0c;--amt:#f3cf6b}
+html,body{background:var(--bg);color:var(--tx);font-family:'Trebuchet MS',Verdana,sans-serif;margin:0}
+body{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+header{background:var(--n);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:env(safe-area-inset-top,0px);z-index:900}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--n);z-index:950}
+.badge{width:46px;height:46px;border-radius:50%;background:#fff;border:3px solid var(--g);display:grid;place-items:center;font-size:24px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;margin:12px}
+label{display:block;font-size:13px;font-weight:700;margin:10px 0 4px}
+input,select{width:100%;padding:11px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font-size:15px}
+.btn{display:block;width:100%;padding:13px;border-radius:12px;background:var(--g);color:#fff;font-weight:700;text-align:center;border:0;font-size:15px}
+.btn.alt{background:var(--n);color:#fff}.btn.sm{width:auto;display:inline-block;padding:9px 14px;font-size:13px}
+.seg{display:flex;background:var(--bg);border-radius:12px;padding:4px;border:1px solid var(--bd)}
+.seg button{flex:1;padding:10px;border-radius:9px;font-weight:700;font-size:14px;color:var(--mut)}
+.seg button.on{background:var(--g);color:#fff}
+.notice{background:var(--gl);border-left:5px solid var(--g);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;margin:12px}
+.pill{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700}
+.ok{background:var(--gl);color:var(--g)}.wait{background:var(--am);color:var(--amt)}
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--bd);display:flex;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));z-index:1000}
+nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11.5px;font-weight:700;color:var(--mut);padding:6px 2px;border-radius:12px}
+nav button span{font-size:21px}nav button.on{color:var(--g);background:var(--gl)}
+.stat{flex:1;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:10px;text-align:center}
+.stat b{display:block;font-size:26px;color:var(--g)}.stat small{font-size:11.5px;color:var(--mut)}
+.chip{white-space:nowrap;padding:8px 14px;border-radius:99px;border:1px solid var(--bd);background:var(--card);font-size:13px;font-weight:700}
+.chip.on{background:var(--n);color:#fff;border-color:var(--n)}
+.av{width:54px;height:54px;border-radius:50%;object-fit:cover;background:var(--gl)}
+#map{height:290px;border-radius:12px;margin-top:6px;background:#dbe7e0}
+.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-tile-container,.leaflet-layer{position:absolute;left:0;top:0}
+.leaflet-container{overflow:hidden;position:relative;touch-action:none;-webkit-tap-highlight-color:transparent}
+.leaflet-tile,.leaflet-marker-icon{user-select:none;-webkit-user-drag:none}
+.leaflet-tile-pane{z-index:200}.leaflet-overlay-pane{z-index:400}.leaflet-marker-pane{z-index:600}.leaflet-map-pane svg{position:absolute}
+.leaflet-control{position:relative;z-index:800;pointer-events:auto;margin:10px}
+.leaflet-top,.leaflet-bottom{position:absolute;z-index:1000;pointer-events:none}.leaflet-top{top:0}.leaflet-left{left:0}.leaflet-bottom{bottom:0}.leaflet-right{right:0}
+.leaflet-control-zoom a{display:block;width:32px;height:32px;line-height:32px;text-align:center;background:#fff;color:#000;border-bottom:1px solid #ccc;text-decoration:none;font-weight:700}
+.leaflet-control-attribution{background:rgba(255,255,255,.8);font-size:10px;padding:0 4px;color:#333}
+.pin{width:22px;height:22px;border-radius:50% 50% 50% 0;background:#e53935;border:3px solid #fff;transform:rotate(-45deg);box-shadow:0 2px 6px #0006}
+.lbl{font-size:10px;font-weight:700;color:#12254a;background:#ffffffcc;border-radius:6px;padding:0 4px;white-space:nowrap;display:inline-block;transform:translate(-50%,-50%)}
+.dot{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--g);transform:translate(-50%,-50%)}
+#modal{position:fixed;inset:0;background:#000a;z-index:1100;display:none;align-items:center;justify-content:center;padding:20px}
+.hide{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="badge">🦅</div>
+  <div><div style="font-weight:800;font-size:17px;line-height:1.1">NSVS SmartAdmit &amp; Shuttle</div>
+  <div style="font-size:12px;opacity:.85">Nilespring Secondary Vocational School · Mokolo, Adjumani</div></div>
+  <button id="inst" class="btn sm hide" style="margin-left:auto">Install app</button>
+</header>
+
+<main>
+<!-- TAB 1 -->
+<section id="t0">
+  <div class="notice">🏫 Strictly 100% Boarding School — All students (including within 1.5 km) reside in our Boys’ &amp; Girls’ Dormitories.</div>
+  <div class="card">
+    <div class="seg"><button id="bn" class="on" onclick="setType('new')">New applicant</button><button id="bc" onclick="setType('cont')">Continuing student</button></div>
+
+    <div id="newF">
+      <label>Student full name</label><input id="nName" placeholder="e.g. Erio Kevin">
+      <label>Gender</label>
+      <select id="nGen"><option value="">Select gender</option><option value="M">Male → Boys’ Dormitory</option><option value="F">Female → Girls’ Dormitory</option></select>
+      <label>Previous school</label><input id="nPrev" placeholder="Previous school">
+      <label>Level &amp; class</label>
+      <select id="nCls"><option value="">Select class</option>
+        <optgroup label="O-Level"><option>S.1</option><option>S.2</option><option>S.3</option><option>S.4</option></optgroup>
+        <optgroup label="A-Level Sciences"><option>S.5 Sciences</option><option>S.6 Sciences</option></optgroup>
+        <optgroup label="A-Level Arts"><option>S.5 Arts</option><option>S.6 Arts</option></optgroup></select>
+      <label>Compulsory vocational trade</label><select id="nTrade"></select>
+      <label>PLE / UCE / previous report performance</label><input id="nScore" placeholder="e.g. PLE Agg 8, or UCE 22 points">
+      <label>Snap / upload report card photo</label>
+      <div style="display:flex;gap:8px">
+        <label class="btn alt sm" style="flex:1;margin:0;cursor:pointer">📷 Take photo<input type="file" accept="image/*" capture="environment" class="hide" onchange="prev(this)"></label>
+        <label class="btn alt sm" style="flex:1;margin:0;cursor:pointer">🖼️ Choose file<input type="file" accept="image/*" class="hide" onchange="prev(this)"></label>
+      </div>
+      <div id="photoMsg" style="font-size:12px;color:var(--mut);margin-top:6px"></div>
+      <img id="nPrev2" class="hide" style="margin-top:8px;border-radius:10px;max-height:150px">
+    </div>
+
+    <div id="contF" class="hide">
+      <label>Student number</label><input id="cNum" placeholder="Student number">
+      <div style="font-size:12px;color:var(--mut);margin-top:4px">Demo: try NSVS/26/001 or NSVS/26/002</div>
+      <button class="btn alt" style="margin-top:10px" onclick="findStu()">Find my profile</button>
+      <div id="stuCard" class="hide" style="margin-top:12px"></div>
+      <div id="cTradeW" class="hide"><label>Confirm vocational trade</label><select id="cTrade"></select></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:800">Home pickup location</div>
+    <label>Home district</label><select id="dist" onchange="distChg()"></select>
+    <button class="btn alt sm" style="margin-top:10px" onclick="useGps()">📍 Use my current GPS location</button>
+    <div id="map"></div>
+    <div id="coords" style="font-size:12px;color:var(--mut);margin-top:6px">Tap the map or drag the pin onto your home.</div>
+    <label>Nearest landmark / gate description</label><input id="land" placeholder="e.g. Arua Hill Roundabout">
+    <label>Parent WhatsApp number</label><input id="phone" type="tel" placeholder="+256 7__ ___ ___">
+    <div id="err" style="color:#e53935;font-size:13px;font-weight:700;margin-top:8px"></div>
+    <button class="btn" style="margin-top:10px" onclick="submitReg()">Submit application</button>
+  </div>
+  <div id="slip"></div>
+</section>
+
+<!-- TAB 2 -->
+<section id="t1" class="hide">
+  <div style="display:flex;gap:8px;margin:12px" id="stats"></div>
+  <div id="adminList"></div>
+</section>
+
+<!-- TAB 3 -->
+<section id="t2" class="hide">
+  <div id="chips" style="display:flex;gap:8px;overflow-x:auto;padding:12px"></div>
+  <div id="vanList"></div>
+</section>
+</main>
+
+<div id="modal" onclick="this.style.display='none'"><div class="card" style="max-width:380px;width:100%" id="mbody"></div></div>
+
+<nav>
+  <button class="on" onclick="go(0)"><span>📝</span>Parent Apply</button>
+  <button onclick="go(1)"><span>✅</span>Admin Review</button>
+  <button onclick="go(2)"><span>🚐</span>Van Driver List</button>
+</nav>
+
+<script>
+const TRADES=["Tailoring & Fashion Design","Hairdressing","Catering","Carpentry","Bricklaying","Electrical Installation","ICT","Agriculture","Poultry keeping"];
+const D={"Adjumani":[3.38,31.79,"Local Adjumani"],"Moyo":[3.65,31.72,"Northern West Nile"],"Obongi":[3.30,31.55,"Northern West Nile"],"Yumbe":[3.47,31.25,"Northern West Nile"],"Koboko":[3.41,30.96,"Northern West Nile"],"Arua City":[3.02,30.91,"Southern West Nile"],"Arua District":[3.10,30.80,"Southern West Nile"],"Maracha":[3.28,30.93,"Southern West Nile"],"Terego":[3.15,31.05,"Southern West Nile"],"Madi-Okollo":[2.95,31.20,"Southern West Nile"],"Nebbi":[2.48,31.09,"Southern West Nile"],"Zombo":[2.52,30.91,"Southern West Nile"],"Pakwach":[2.46,31.50,"Southern West Nile"],"Gulu City":[2.77,32.29,"Acholi Corridor"],"Gulu District":[2.90,32.15,"Acholi Corridor"],"Amuru":[2.80,32.00,"Acholi Corridor"]};
+const ROUTES=["All Routes","Local Adjumani","Acholi Corridor","Northern West Nile","Southern West Nile"];
+const av=c=>'data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="${c}"/><circle cx="32" cy="24" r="12" fill="#fff"/><path d="M8 64c2-18 14-24 24-24s22 6 24 24z" fill="#fff"/></svg>`);
+const STU={C001:{n:"Amadrio Kevin",c:"S.3",g:"F",t:"Tailoring & Fashion Design",p:av("#c2185b")},E001:{n:"Joel Tunda",c:"S.5 (PCM/ICT)",g:"M",t:"Poultry keeping",p:av("#1565c0")}};
+STU["NSVS/26/001"]=STU.C001;STU["NSVS/26/002"]=STU.E001;
+const dorm=g=>g==="F"?"Girls’ Dormitory":"Boys’ Dormitory";
+let R=[
+ {id:"NSVS-2027-001",name:"Erio Kevin",cls:"New S.1",g:"F",trade:"Tailoring & Fashion Design",score:"PLE Agg 7",district:"Arua City",land:"Arua Hill Roundabout",phone:"+256 772 100 001",lat:3.0303,lng:30.9073,st:"Admitted",trip:0},
+ {id:"NSVS-2027-002",name:"Tiba Godfrey",cls:"New S.5 BCM",g:"M",trade:"Agriculture",score:"UCE 24 points",district:"Gulu City",land:"Lacor Trading Center",phone:"+256 772 100 002",lat:2.7724,lng:32.2881,st:"Admitted",trip:0},
+ {id:"NSVS-2027-003",name:"Aluma Hassan",cls:"New S.2",g:"M",trade:"Carpentry",score:"S.1 avg 68%",district:"Yumbe",land:"Yumbe Town Mosque",phone:"+256 772 100 003",lat:3.4651,lng:31.2469,st:"Pending Review",trip:0}];
+let type="new",lat=null,lng=null,photo=null,stu=null,route="All Routes",map,pin;
+const $=id=>document.getElementById(id);
+const opts=(a,ph)=>(ph?`<option value="">${ph}</option>`:"")+a.map(x=>`<option>${x}</option>`).join("");
+$("nTrade").innerHTML=opts(TRADES.slice(0,8),"Select trade");$("cTrade").innerHTML=opts(TRADES);
+$("dist").innerHTML=opts(Object.keys(D),"Select district");
+
+function go(i){[0,1,2].forEach(k=>{$("t"+k).classList.toggle("hide",k!==i);document.querySelectorAll("nav button")[k].classList.toggle("on",k===i)});
+ if(i===0&&map)setTimeout(()=>map.invalidateSize(),50);if(i===1)drawAdmin();if(i===2)drawVan();scrollTo(0,0)}
+function setType(t){type=t;$("bn").classList.toggle("on",t==="new");$("bc").classList.toggle("on",t==="cont");$("newF").classList.toggle("hide",t!=="new");$("contF").classList.toggle("hide",t!=="cont")}
+function prev(inp){const f=inp.files[0];if(!f)return;const m=$("photoMsg");m.textContent="Loading photo…";const r=new FileReader();
+ r.onerror=()=>{m.textContent="Could not read that file. Try another photo."};
+ r.onload=e=>{const im=new Image();im.onerror=()=>{m.textContent="That file is not an image. Choose a photo."};
+  im.onload=()=>{const s=Math.min(1,1000/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext("2d").drawImage(im,0,0,c.width,c.height);photo=c.toDataURL("image/jpeg",.72);$("nPrev2").src=photo;$("nPrev2").classList.remove("hide");m.textContent="✓ Report card attached"};
+  im.src=e.target.result};r.readAsDataURL(f);inp.value=""}
+function findStu(){const k=$("cNum").value.trim().toUpperCase();const s=STU[k]||STU[$("cNum").value.trim()];const c=$("stuCard");c.classList.remove("hide");
+ if(!s){stu=null;c.innerHTML='<div style="color:#e53935;font-weight:700;font-size:13px">No student found. Check the number and try again.</div>';$("cTradeW").classList.add("hide");return}
+ stu=s;c.innerHTML=`<div style="display:flex;gap:12px;align-items:center;background:var(--gl);border-radius:12px;padding:10px"><img class="av" src="${s.p}"><div><b>${s.n}</b><div style="font-size:13px">${s.c} · ${dorm(s.g)}</div></div></div>`;
+ $("cTradeW").classList.remove("hide");$("cTrade").value=s.t}
+
+/* map */
+function initMap(){map=L.map("map",{center:[2.9,31.4],zoom:8,attributionControl:true});
+ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"© OpenStreetMap"}).addTo(map);
+ Object.entries(D).forEach(([n,v])=>L.marker([v[0],v[1]],{interactive:false,icon:L.divIcon({className:"",html:`<span class="lbl">${n}</span>`,iconSize:[0,0]})}).addTo(map));
+ map.on("click",e=>setPin(e.latlng.lat,e.latlng.lng,true))}
+function setPin(a,b,auto){lat=a;lng=b;
+ if(!pin){pin=L.marker([a,b],{draggable:true,icon:L.divIcon({className:"",html:'<div class="pin"></div>',iconSize:[22,22],iconAnchor:[11,22]})}).addTo(map);pin.on("dragend",()=>{const p=pin.getLatLng();setPin(p.lat,p.lng,true)})}else pin.setLatLng([a,b]);
+ $("coords").textContent=`Pin set: ${a.toFixed(4)}, ${b.toFixed(4)}`;
+ if(auto){let best,bd=1e9;for(const[n,v]of Object.entries(D)){const d=(v[0]-a)**2+(v[1]-b)**2;if(d<bd){bd=d;best=n}}$("dist").value=best}}
+function distChg(){const v=D[$("dist").value];if(v)map.flyTo([v[0],v[1]],10)}
+function useGps(){if(!navigator.geolocation){$("coords").textContent="GPS not available on this device.";return}
+ $("coords").textContent="Finding your location…";
+ navigator.geolocation.getCurrentPosition(p=>{setPin(p.coords.latitude,p.coords.longitude,false);map.flyTo([p.coords.latitude,p.coords.longitude],14)},()=>{$("coords").textContent="Location blocked. Allow location access, or tap the map to drop the pin."},{enableHighAccuracy:true,timeout:10000})}
+
+function submitReg(){const e=$("err");e.textContent="";let n,c,g,t,sc,pr="Continuing";
+ if(type==="new"){n=$("nName").value.trim();g=$("nGen").value;c=$("nCls").value;t=$("nTrade").value;sc=$("nScore").value.trim();
+  if(!n||!g||!c||!t){e.textContent="Complete name, gender, class and trade.";return}c="New "+c}
+ else{if(!stu){e.textContent="Find your profile first with the student number.";return}n=stu.n;g=stu.g;c=stu.c;t=$("cTrade").value;sc="Continuing"}
+ if(!$("dist").value){e.textContent="Choose your home district.";return}
+ if(lat===null){e.textContent="Drop a pin on your home location.";return}
+ if(!$("land").value.trim()||!$("phone").value.trim()){e.textContent="Add a landmark and parent WhatsApp number.";return}
+ const r={id:"NSVS-2027-"+String(R.length+1).padStart(3,"0"),name:n,cls:c,g,trade:t,score:sc,district:$("dist").value,land:$("land").value.trim(),phone:$("phone").value.trim(),lat,lng,st:"Pending Review",trip:0,img:type==="new"?photo:null};
+ R.push(r);photo=null;$("nPrev2").classList.add("hide");$("photoMsg").textContent="";
+ $("slip").innerHTML=`<div class="card" style="border:2px dashed var(--g)"><div style="text-align:center;font-weight:800;color:var(--g)">Digital Admission Slip</div>
+ <div style="text-align:center;font-size:24px;font-weight:800;margin:6px 0">${r.id}</div>
+ <div style="font-size:14px;line-height:1.7"><b>${r.name}</b> · ${r.cls}<br>${dorm(r.g)}<br>Trade: ${r.trade}<br>Pickup: ${r.land}, ${r.district}<br>Status: <span class="pill wait">Pending Review</span></div>
+ <button class="btn alt" style="margin-top:12px" onclick="go(1)">Go to Admin Review</button></div>`;
+ $("slip").scrollIntoView({behavior:"smooth"})}
+
+function drawAdmin(){const a=R.length,p=R.filter(x=>x.st!=="Admitted").length,b=R.filter(x=>x.g==="M").length;
+ $("stats").innerHTML=[[a,"Total applicants"],[p,"Pending review"],[b,"Boys’ Dorm"],[a-b,"Girls’ Dorm"]].map(s=>`<div class="stat"><b>${s[0]}</b><small>${s[1]}</small></div>`).join("");
+ $("adminList").innerHTML=R.map((r,i)=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px"><b>${r.name}</b><span class="pill ${r.st==="Admitted"?"ok":"wait"}">${r.st==="Admitted"?"Admitted & On Van List":"Pending Review"}</span></div>
+ <div style="font-size:13px;color:var(--mut);margin:6px 0;line-height:1.6">${r.id} · ${r.cls}<br>${dorm(r.g)} · ${r.trade}<br>${r.district} — ${r.land}</div>
+ <div style="display:flex;gap:8px"><button class="btn alt sm" onclick="viewCard(${i})">View report card</button>${r.st!=="Admitted"?`<button class="btn sm" onclick="approve(${i})">Approve admission</button>`:""}</div></div>`).join("")}
+function approve(i){R[i].st="Admitted";drawAdmin()}
+function viewCard(i){const r=R[i];$("mbody").innerHTML=`<b>${r.name}</b> · ${r.cls}<div style="font-size:13px;color:var(--mut);margin:4px 0 10px">${r.score||"—"}</div>
+ ${r.img?`<img src="${r.img}" style="width:100%;border-radius:10px">`:`<div style="background:var(--gl);border-radius:12px;padding:30px 12px;text-align:center;font-size:13px">📄 Sample report card<br><b>${r.score||"On file"}</b><br>(no photo uploaded in demo)</div>`}
+ <div style="text-align:center;font-size:12px;margin-top:10px;color:var(--mut)">Tap anywhere to close</div>`;$("modal").style.display="flex"}
+
+function drawVan(){$("chips").innerHTML=ROUTES.map(x=>`<button class="chip ${x===route?"on":""}" onclick="route='${x}';drawVan()">${x}</button>`).join("");
+ const L2=R.map((r,i)=>[r,i]).filter(([r])=>r.st==="Admitted"&&(route==="All Routes"||D[r.district][2]===route));
+ const S=["Waiting","Picked Up","Arrived at School"],C=["wait","ok","ok"],E=["⏳","🚐","🏫"];
+ $("vanList").innerHTML=L2.length?L2.map(([r,i])=>`<div class="card"><div style="display:flex;justify-content:space-between;align-items:start;gap:8px"><div><b>${r.name}</b><div style="font-size:13px;color:var(--mut)">${r.cls} · ${dorm(r.g)}</div></div>
+ <button class="pill ${C[r.trip]}" onclick="R[${i}].trip=(R[${i}].trip+1)%3;drawVan()">${E[r.trip]} ${S[r.trip]}</button></div>
+ <div style="font-size:13px;line-height:1.7;margin:8px 0">🧭 ${D[r.district][2]} · ${r.district}<br>📍 ${r.land}<br>📱 <a href="tel:${r.phone.replace(/\s/g,"")}" style="color:var(--g);font-weight:700">${r.phone}</a></div>
+ <a class="btn alt sm" href="https://google.com" target="_blank" rel="noopener">Navigate (Google Maps)</a></div>`).join(""):`<div class="card" style="text-align:center;color:var(--mut)">No admitted students on this route yet. Approve applicants in Admin Review.</div>`}
+
+initMap();
+let dp;addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;$("inst").classList.remove("hide")});
+$("inst").onclick=()=>{if(dp)dp.prompt();$("inst").classList.add("hide")};
+if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
